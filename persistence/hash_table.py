@@ -12,17 +12,16 @@ class HashTable:
         self.collisions = 0
         for _ in range(capacity):
             self.buckets.append([])
-
+    
     def _hash(self, key):
         total = 0
-        factor = 31
-        for i in range(len(key)):
-            total = total * factor + ord(key[i])
+        for ch in key:
+            total = total * 31 + ord(ch)
         if total < 0:
             total = -total
         return total % self.capacity
 
-    def _find_in_bucket(self, bucket, key):
+    def _find_index(self, bucket, key):
         for i in range(len(bucket)):
             if bucket[i].key == key:
                 return i
@@ -31,7 +30,7 @@ class HashTable:
     def put(self, key, value_ref):
         index = self._hash(key)
         bucket = self.buckets[index]
-        pos = self._find_in_bucket(bucket, key)
+        pos = self._find_index(bucket, key)
 
         if pos != -1:
             bucket[pos].value_ref = value_ref
@@ -49,7 +48,7 @@ class HashTable:
     def get(self, key):
         index = self._hash(key)
         bucket = self.buckets[index]
-        pos = self._find_in_bucket(bucket, key)
+        pos = self._find_index(bucket, key)
         if pos == -1:
             return None
         return bucket[pos].value_ref
@@ -57,7 +56,7 @@ class HashTable:
     def delete(self, key):
         index = self._hash(key)
         bucket = self.buckets[index]
-        pos = self._find_in_bucket(bucket, key)
+        pos = self._find_index(bucket, key)
         if pos == -1:
             return False
         bucket.pop(pos)
@@ -67,35 +66,36 @@ class HashTable:
     def load_factor(self):
         return self.size / self.capacity
 
+    def items(self):
+        values = []
+        for bucket in self.buckets:
+            for entry in bucket:
+                values.append((entry.key, entry.value_ref))
+        return values
+
     def rehash(self):
-        old_buckets = self.buckets
+        old_items = self.items()
         self.capacity = self.capacity * 2
+        self.size = 0
         self.buckets = []
         for _ in range(self.capacity):
             self.buckets.append([])
-        old_size = self.size
-        self.size = 0
 
-        for bucket in old_buckets:
-            for entry in bucket:
-                self.put(entry.key, entry.value_ref)
-
-        self.size = old_size
-
-    def items(self):
-        data = []
-        for bucket in self.buckets:
-            for entry in bucket:
-                data.append((entry.key, entry.value_ref))
-        return data
+        for key, value_ref in old_items:
+            index = self._hash(key)
+            bucket = self.buckets[index]
+            if len(bucket) > 0:
+                self.collisions += 1
+            bucket.append(HashEntry(key, value_ref))
+            self.size += 1
 
     def to_list(self):
         data = []
         for bucket in self.buckets:
-            bucket_data = []
+            one_bucket = []
             for entry in bucket:
-                bucket_data.append([entry.key, entry.value_ref])
-            data.append(bucket_data)
+                one_bucket.append([entry.key, entry.value_ref])
+            data.append(one_bucket)
         return data
 
     @classmethod
