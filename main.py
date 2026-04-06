@@ -320,10 +320,10 @@ class DinoGame:
                 break
 
     def draw_background(self):
-        self.screen.blit(self.background, (0, 0))
+        self.screen.fill((255,255,255))   # color sólido
         pygame.draw.line(self.screen, BROWN, (0, GROUND_Y), (WIDTH, GROUND_Y), 3)
         for cloud in self.clouds:
-            cloud.draw(self.screen)
+                cloud.draw(self.screen)
             
     def draw_menu(self):
         self.draw_background()
@@ -348,7 +348,7 @@ class DinoGame:
         cactus.draw(self.screen)
 
     def draw_playing(self):
-        self.screen.blit(self.background, (0, 0))
+        self.draw_background()
         self.dino.draw(self.screen)
         for obstacle in self.obstacles:
             obstacle.draw(self.screen)
