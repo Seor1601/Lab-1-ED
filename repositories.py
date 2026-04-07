@@ -1,50 +1,85 @@
+import time
+
+
 class ProfileRepository:
     def __init__(self, store):
         self.store = store
 
-    def save_profile(self, player_id, player_name, best_score, total_games, last_score):
-        data = [player_id, player_name, best_score, total_games, last_score]
-        self.store.append_record('profile', 'player:' + player_id, data)
+    def create_user(self, username, password):
+        key = "player:" + username
+        record = self.store.get(key)
 
-    def get_profile(self, player_id):
-        record = self.store.get('player:' + player_id)
+        if record is not None:
+            return False
+
+        # [username, password, best_score, games, last_score]
+        data = [username, password, 0, 0, 0]
+        self.store.append_record("profile", key, data)
+        return True
+
+    def login_user(self, username, password):
+        key = "player:" + username
+        record = self.store.get(key)
+
         if record is None:
             return None
-        return record[2]                                                        
+
+        data = record[2]
+
+        if data[1] == password:
+            return data
+
+        return None
+
+    def get_profile(self, username):
+        key = "player:" + username
+        record = self.store.get(key)
+
+        if record is None:
+            return None
+
+        return record[2]
+
+    def save_profile(self, username, password, best_score, games, last_score):
+        key = "player:" + username
+        data = [username, password, best_score, games, last_score]
+        self.store.append_record("profile", key, data)
 
 
 class SettingsRepository:
     def __init__(self, store):
         self.store = store
 
-    def save_settings(self, volume, difficulty, fullscreen):
-        data = [volume, difficulty, fullscreen]
-        self.store.append_record('settings', 'settings:main', data)
-
     def get_settings(self):
-        record = self.store.get('settings:main')
+        record = self.store.get("settings:game")
+
         if record is None:
             return None
+
         return record[2]
+
+    def save_settings(self, volume, difficulty, fullscreen):
+        data = [volume, difficulty, fullscreen]
+        self.store.append_record("settings", "settings:game", data)
 
 
 class LeaderboardRepository:
     def __init__(self, store):
         self.store = store
 
-    def save_score(self, player_name, score):
+    def save_score(self, username, score):
+        key = "score:" + username + ":" + str(time.time())
+        data = [username, score]
+        self.store.append_record("score", key, data)
+
+    def get_top_scores(self, limit=5):
         records = self.store.get_all_records()
-        score_id = 'score:' + str(len(records) + 1)
-        data = [player_name, score]
-        self.store.append_record('score', score_id, data)
-
-    def get_top_scores(self, top_n=10):
-        all_records = self.store.get_all_records()
         scores = []
-        for record in all_records:
-            if len(record) >= 3 and record[0] == 'score':
-                data = record[2]
-                scores.append(data)
 
-        scores.sort(key=lambda item: item[1], reverse=True)
-        return scores[:top_n]
+        for record in records:
+            if record[0] == "score":
+                data = record[2]
+                scores.append((data[0], data[1]))
+
+        scores.sort(key=lambda x: x[1], reverse=True)
+        return scores[:limit]
