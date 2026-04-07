@@ -77,12 +77,12 @@ class Jugador:
 
 class Obstaculo:
     def __init__(self, speed):
-        self.image = pygame.image.load("assets/obstaculo.png").convert_alpha()
-        self.w = random.choice([40,52,64])
-        self.h = random.choice([80, 110, 140])
+        self.image = pygame.image.load("assets/cactus.png").convert_alpha()
+        self.w = 55
+        self.h = 95
         self.image = pygame.transform.scale(self.image, (self.w, self.h))
         self.x = WIDTH + random.randint(0, 180)
-        self.y = GROUND_Y - self.h+20
+        self.y = GROUND_Y - self.h + 20
         self.speed = speed
 
     def update(self, speed):
@@ -90,24 +90,20 @@ class Obstaculo:
         self.x -= self.speed
 
     def rect(self):
-        return pygame.Rect(int(self.x),int(self.y)+15,self.w - 30,self.h - 70)
+        hitbox_x = self.x + self.w * 0.28
+        hitbox_y = self.y + self.h * 0.12
+        hitbox_w = self.w * 0.44
+        hitbox_h = self.h * 0.78
+
+        return pygame.Rect(
+            int(hitbox_x),
+            int(hitbox_y),
+            int(hitbox_w),
+            int(hitbox_h)
+        )
 
     def draw(self, screen):
         screen.blit(self.image, (self.x, self.y))
-        
-class Cloud:
-    def __init__(self):
-        self.x = WIDTH + random.randint(0, 300)
-        self.y = random.randint(40, 130)
-        self.speed = random.uniform(1.0, 2.0)
-
-    def update(self):
-        self.x -= self.speed
-
-    def draw(self, screen):
-        pygame.draw.circle(screen, GRAY, (int(self.x), int(self.y)), 16)
-        pygame.draw.circle(screen, GRAY, (int(self.x + 18), int(self.y + 2)), 14)
-        pygame.draw.circle(screen, GRAY, (int(self.x + 34), int(self.y)), 16)
 
 
 def draw_text(screen, text, font, color, x, y):
@@ -118,7 +114,7 @@ def draw_text(screen, text, font, color, x, y):
 class jugadorGame:
     def __init__(self):
         pygame.init()
-        
+
         self.store = RecordStore()
         self.profile_repo = ProfileRepository(self.store)
         self.settings_repo = SettingsRepository(self.store)
@@ -128,29 +124,29 @@ class jugadorGame:
         if self.settings is None:
             self.settings = [50, "Normal", 0]
             self.settings_repo.save_settings(self.settings[0], self.settings[1], self.settings[2])
+        else:
+            self.settings[2] = 0
+            self.settings_repo.save_settings(self.settings[0], self.settings[1], self.settings[2])
 
-        self.screen = None
-        self.apply_display_mode()
-
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Jugador Hash Game")
         self.clock = pygame.time.Clock()
 
         self.big_font = pygame.font.SysFont("arial", 34, bold=True)
         self.font = pygame.font.SysFont("arial", 24)
         self.small_font = pygame.font.SysFont("arial", 18)
-        
+
+        self.background = pygame.image.load("assets/fondo_desierto.png").convert()
+        self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
+
         self.menu_jugador = Jugador()
         self.menu_jugador.x = 180
-        self.menu_jugador.y = 220
+        self.menu_jugador.y = GROUND_Y - self.menu_jugador.h
 
         self.menu_obstaculo = Obstaculo(0)
         self.menu_obstaculo.x = 680
-        self.menu_obstaculo.y = GROUND_Y - self.menu_obstaculo.h
-        
-        self.ground_height = HEIGHT - (HEIGHT - 300)
-        self.ground_img = pygame.image.load("assets/suelo.png").convert_alpha()
-        self.ground_img = pygame.transform.scale(self.ground_img,(WIDTH, self.ground_height))
-        
+        self.menu_obstaculo.y = GROUND_Y - self.menu_obstaculo.h + 20
+
         self.state = "login"
         self.username_input = ""
         self.password_input = ""
@@ -164,17 +160,9 @@ class jugadorGame:
 
         self.reset_game_objects()
 
-    def apply_display_mode(self):
-        if self.settings[2] == 1:
-            info = pygame.display.Info()
-            self.screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
-        else:
-            self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-
     def reset_game_objects(self):
         self.Jugador = Jugador()
         self.obstacles = [Obstaculo(7)]
-        self.clouds = [Cloud(), Cloud()]
         self.score = 0
         self.speed = 7
         self.frame_count = 0
@@ -214,7 +202,7 @@ class jugadorGame:
                 self.login_message = "Bienvenido " + username
                 self.state = "menu"
 
-        elif key == pygame.K_LSHIFT:
+        elif key == pygame.K_LSHIFT or key == pygame.K_RSHIFT:
             username = self.username_input.strip()
             password = self.password_input.strip()
 
@@ -245,42 +233,42 @@ class jugadorGame:
     def draw_login(self):
         self.screen.fill((240, 240, 240))
 
-        title = self.big_font.render("LOGIN / REGISTER", True, (0, 0, 0))
-        self.screen.blit(title, (WIDTH/2 - title.get_width()/2, 35))
+        title = self.big_font.render("LOGIN / REGISTER", True, BLACK)
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 35))
 
-        username_label = self.font.render("Usuario:", True, (0, 0, 0))
-        password_label = self.font.render("Contraseña:", True, (0, 0, 0))
+        username_label = self.font.render("Usuario:", True, BLACK)
+        password_label = self.font.render("Contraseña:", True, BLACK)
 
-        self.screen.blit(username_label, (WIDTH/3-150, 100))
-        self.screen.blit(password_label, (WIDTH/3-150, 165))
+        self.screen.blit(username_label, (WIDTH // 2 - 230, 100))
+        self.screen.blit(password_label, (WIDTH // 2 - 230, 165))
 
-        username_box = pygame.Rect(WIDTH/2 - 120, 95, 240, 40)
-        password_box = pygame.Rect(WIDTH/2 - 120, 160, 240, 40)
+        username_box = pygame.Rect(WIDTH // 2 - 120, 95, 240, 40)
+        password_box = pygame.Rect(WIDTH // 2 - 120, 160, 240, 40)
 
-        color_user = (0, 120, 255) if self.active_field == "username" else (0, 0, 0)
-        color_pass = (0, 120, 255) if self.active_field == "password" else (0, 0, 0)
+        color_user = (0, 120, 255) if self.active_field == "username" else BLACK
+        color_pass = (0, 120, 255) if self.active_field == "password" else BLACK
 
         pygame.draw.rect(self.screen, color_user, username_box, 2)
         pygame.draw.rect(self.screen, color_pass, password_box, 2)
 
-        username_text = self.font.render(self.username_input, True, (0, 0, 0))
+        username_text = self.font.render(self.username_input, True, BLACK)
         hidden_password = "*" * len(self.password_input)
-        password_text = self.font.render(hidden_password, True, (0, 0, 0))
+        password_text = self.font.render(hidden_password, True, BLACK)
 
-        self.screen.blit(username_text, (360, 103))
-        self.screen.blit(password_text, (360, 168))
+        self.screen.blit(username_text, (WIDTH // 2 - 110, 103))
+        self.screen.blit(password_text, (WIDTH // 2 - 110, 168))
 
-        hint1 = self.small_font.render("TAB cambia campo", True, (0, 0, 0))
-        hint2 = self.small_font.render("ENTER inicia sesión", True, (0, 0, 0))
-        hint3 = self.small_font.render("SHIFT registra cuenta nueva", True, (0, 0, 0))
+        hint1 = self.small_font.render("TAB cambia campo", True, BLACK)
+        hint2 = self.small_font.render("ENTER inicia sesión", True, BLACK)
+        hint3 = self.small_font.render("SHIFT registra cuenta nueva", True, BLACK)
 
-        self.screen.blit(hint1, (WIDTH/2 - hint1.get_width()/2, 230))
-        self.screen.blit(hint2, (WIDTH/2 - hint2.get_width()/2, 255))
-        self.screen.blit(hint3, (WIDTH/2 - hint3.get_width()/2, 280))
+        self.screen.blit(hint1, (WIDTH // 2 - hint1.get_width() // 2, 230))
+        self.screen.blit(hint2, (WIDTH // 2 - hint2.get_width() // 2, 255))
+        self.screen.blit(hint3, (WIDTH // 2 - hint3.get_width() // 2, 280))
 
         if self.login_message != "":
             msg = self.small_font.render(self.login_message, True, (200, 0, 0))
-            self.screen.blit(msg, (WIDTH/2 - msg.get_width()/2, 345))
+            self.screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, 345))
 
     def save_after_game(self):
         if self.profile is None:
@@ -318,14 +306,6 @@ class jugadorGame:
 
         self.Jugador.update()
 
-        for cloud in self.clouds:
-            cloud.update()
-
-        self.clouds = [cloud for cloud in self.clouds if cloud.x > -80]
-
-        if len(self.clouds) < 3 and random.randint(0, 100) < 2:
-            self.clouds.append(Cloud())
-
         for obstacle in self.obstacles:
             obstacle.update(self.speed)
 
@@ -343,26 +323,26 @@ class jugadorGame:
                 break
 
     def draw_background(self):
-        self.screen.fill(WHITE)
-        self.screen.blit(self.ground_img, (0, HEIGHT - 300))
-        self.screen.blit(self.ground_img, (800, HEIGHT-50))
-        for cloud in self.clouds:
-            cloud.draw(self.screen)
+        self.screen.blit(self.background, (0, 0))
 
     def draw_menu(self):
         self.draw_background()
 
-        draw_text(self.screen, "RUNNING GAME", self.big_font, BLACK, WIDTH // 2 - 100, 60)
-        draw_text(self.screen, "Usa flechas y ENTER", self.small_font, BLACK, WIDTH // 2 - 100, 100)
+        title = self.big_font.render("RUNNING GAME", True, BLACK)
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 60))
+
+        help_text = self.small_font.render("Usa flechas y ENTER", True, BLACK)
+        self.screen.blit(help_text, (WIDTH // 2 - help_text.get_width() // 2, 100))
 
         for i, option in enumerate(self.menu_options):
             color = RED if i == self.menu_index else BLACK
-            draw_text(self.screen, option, self.font, color, WIDTH // 2 - 50, 155 + i * 34)
+            option_text = self.font.render(option, True, color)
+            self.screen.blit(option_text, (WIDTH // 2 - option_text.get_width() // 2, 155 + i * 34))
 
         if self.profile is not None:
-            draw_text(self.screen, "Usuario: " + self.profile[0], self.small_font, BLACK, WIDTH - 200, 20)
-            draw_text(self.screen, "Best Score: " + str(self.profile[2]), self.small_font, BLACK, WIDTH - 200, 45)
-            draw_text(self.screen, "Games: " + str(self.profile[3]), self.small_font, BLACK, WIDTH - 200, 70)
+            draw_text(self.screen, "Usuario: " + self.profile[0], self.small_font, BLACK, WIDTH - 255, 20)
+            draw_text(self.screen, "Best Score: " + str(self.profile[2]), self.small_font, BLACK, WIDTH - 255, 45)
+            draw_text(self.screen, "Games: " + str(self.profile[3]), self.small_font, BLACK, WIDTH - 255, 70)
 
         self.menu_jugador.draw(self.screen)
         self.menu_obstaculo.draw(self.screen)
@@ -374,13 +354,12 @@ class jugadorGame:
         for obstacle in self.obstacles:
             obstacle.draw(self.screen)
 
-        draw_text(self.screen, "Score: " + str(self.score), self.font, BLACK, WIDTH/2, 20)
+        draw_text(self.screen, "SPACE / UP = jump", self.font, BLACK, 20, 20)
+        draw_text(self.screen, "Score: " + str(self.score), self.font, BLACK, WIDTH // 2 - 30, 20)
 
         if self.profile is not None:
-            draw_text(self.screen, "Best: " + str(self.profile[2]), self.font, BLACK, WIDTH/2, 50)
-            draw_text(self.screen, "Jugador: " + self.profile[0], self.font, BLACK, 40, 50)
-
-        draw_text(self.screen, "SPACE / UP = jump", self.font, BLACK, 20, 20)
+            draw_text(self.screen, "Best: " + str(self.profile[2]), self.font, BLACK, WIDTH // 2 - 25, 50)
+            draw_text(self.screen, "Jugador: " + self.profile[0], self.font, BLACK, 20, 50)
 
     def draw_leaderboard(self):
         self.draw_background()
@@ -402,14 +381,11 @@ class jugadorGame:
         draw_text(self.screen, "SETTINGS", self.big_font, BLACK, WIDTH // 2 - 50, 50)
         draw_text(self.screen, "Volume: " + str(self.settings[0]), self.font, BLACK, WIDTH // 2 - 50, 140)
         draw_text(self.screen, "Difficulty: " + self.settings[1], self.font, BLACK, WIDTH // 2 - 50, 180)
-
-        fullscreen_text = "ON" if self.settings[2] == 1 else "OFF"
-        draw_text(self.screen, "Fullscreen: " + fullscreen_text, self.font, BLACK, WIDTH // 2 - 50, 220)
+        draw_text(self.screen, "Fullscreen: OFF", self.font, BLACK, WIDTH // 2 - 50, 220)
 
         draw_text(self.screen, "LEFT/RIGHT cambia volumen", self.small_font, BLACK, WIDTH // 2 - 50, 280)
         draw_text(self.screen, "D cambia dificultad", self.small_font, BLACK, WIDTH // 2 - 50, 305)
-        draw_text(self.screen, "F cambia fullscreen", self.small_font, BLACK, WIDTH // 2 - 50, 330)
-        draw_text(self.screen, "S guarda y ESC vuelve", self.small_font, BLACK, WIDTH // 2 - 50, 355)
+        draw_text(self.screen, "S guarda y ESC vuelve", self.small_font, BLACK, WIDTH // 2 - 50, 330)
 
     def draw_game_over(self):
         self.draw_background()
@@ -418,14 +394,14 @@ class jugadorGame:
         for obstacle in self.obstacles:
             obstacle.draw(self.screen)
 
-        draw_text(self.screen, "GAME OVER", self.big_font, RED, WIDTH // 2 - 50, 70)
+        draw_text(self.screen, "GAME OVER", self.big_font, RED, WIDTH // 2 - 100, 70)
         draw_text(self.screen, "Score: " + str(self.score), self.font, BLACK, WIDTH // 2 - 50, 140)
 
         if self.profile is not None:
-            draw_text(self.screen, "Best Score: " + str(self.profile[2]), self.font, BLACK, WIDTH // 2 - 50, 180)
+            draw_text(self.screen, "Best Score: " + str(self.profile[2]), self.font, BLACK, WIDTH // 2 - 80, 180)
 
-        draw_text(self.screen, "ENTER para volver al menu", self.font, BLACK, WIDTH // 2 - 50, 240)
-        draw_text(self.screen, "R para jugar otra vez", self.font, BLACK, WIDTH // 2 - 50, 280)
+        draw_text(self.screen, "ENTER para volver al menu", self.font, BLACK, WIDTH // 2 - 150, 240)
+        draw_text(self.screen, "R para jugar otra vez", self.font, BLACK, WIDTH // 2 - 110, 280)
 
     def change_difficulty(self):
         current = self.settings[1]
@@ -465,9 +441,6 @@ class jugadorGame:
             self.settings[0] = min(100, self.settings[0] + 5)
         elif key == pygame.K_d:
             self.change_difficulty()
-        elif key == pygame.K_f:
-            self.settings[2] = 0 if self.settings[2] == 1 else 1
-            self.apply_display_mode()
         elif key == pygame.K_s:
             self.settings_repo.save_settings(self.settings[0], self.settings[1], self.settings[2])
         elif key == pygame.K_ESCAPE:
