@@ -16,7 +16,7 @@ RED = (180, 60, 60)
 BROWN = (120, 90, 60)
 
 
-class Dino:
+class Jugador:
     def __init__(self):
         self.x = 90
         self.w = 120
@@ -75,12 +75,14 @@ class Dino:
         screen.blit(self.image, (self.x, self.y + self.draw_offset_y))
 
 
-class Cactus:
+class Obstaculo:
     def __init__(self, speed):
-        self.w = random.choice([20, 26, 32])
-        self.h = random.choice([40, 55, 70])
+        self.image = pygame.image.load("assets/obstaculo.png").convert_alpha()
+        self.w = random.choice([40,52,64])
+        self.h = random.choice([80, 110, 140])
+        self.image = pygame.transform.scale(self.image, (self.w, self.h))
         self.x = WIDTH + random.randint(0, 180)
-        self.y = GROUND_Y - self.h
+        self.y = GROUND_Y - self.h+20
         self.speed = speed
 
     def update(self, speed):
@@ -88,15 +90,11 @@ class Cactus:
         self.x -= self.speed
 
     def rect(self):
-        return pygame.Rect(int(self.x), int(self.y), self.w, self.h)
+        return pygame.Rect(int(self.x),int(self.y)+15,self.w - 30,self.h - 70)
 
     def draw(self, screen):
-        r = self.rect()
-        pygame.draw.rect(screen, GREEN, r)
-        pygame.draw.rect(screen, GREEN, (r.x - 6, r.y + 10, 6, 18))
-        pygame.draw.rect(screen, GREEN, (r.x + r.w, r.y + 14, 6, 18))
-
-
+        screen.blit(self.image, (self.x, self.y))
+        
 class Cloud:
     def __init__(self):
         self.x = WIDTH + random.randint(0, 300)
@@ -117,10 +115,10 @@ def draw_text(screen, text, font, color, x, y):
     screen.blit(img, (x, y))
 
 
-class DinoGame:
+class jugadorGame:
     def __init__(self):
         pygame.init()
-
+        
         self.store = RecordStore()
         self.profile_repo = ProfileRepository(self.store)
         self.settings_repo = SettingsRepository(self.store)
@@ -134,13 +132,25 @@ class DinoGame:
         self.screen = None
         self.apply_display_mode()
 
-        pygame.display.set_caption("Dino Hash Game")
+        pygame.display.set_caption("Jugador Hash Game")
         self.clock = pygame.time.Clock()
 
         self.big_font = pygame.font.SysFont("arial", 34, bold=True)
         self.font = pygame.font.SysFont("arial", 24)
         self.small_font = pygame.font.SysFont("arial", 18)
+        
+        self.menu_jugador = Jugador()
+        self.menu_jugador.x = 180
+        self.menu_jugador.y = 220
 
+        self.menu_obstaculo = Obstaculo(0)
+        self.menu_obstaculo.x = 680
+        self.menu_obstaculo.y = GROUND_Y - self.menu_obstaculo.h
+        
+        self.ground_height = HEIGHT - (HEIGHT - 300)
+        self.ground_img = pygame.image.load("assets/suelo.png").convert_alpha()
+        self.ground_img = pygame.transform.scale(self.ground_img,(WIDTH, self.ground_height))
+        
         self.state = "login"
         self.username_input = ""
         self.password_input = ""
@@ -162,8 +172,8 @@ class DinoGame:
             self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
     def reset_game_objects(self):
-        self.dino = Dino()
-        self.obstacles = [Cactus(7)]
+        self.Jugador = Jugador()
+        self.obstacles = [Obstaculo(7)]
         self.clouds = [Cloud(), Cloud()]
         self.score = 0
         self.speed = 7
@@ -204,7 +214,7 @@ class DinoGame:
                 self.login_message = "Bienvenido " + username
                 self.state = "menu"
 
-        elif key == pygame.K_F2:
+        elif key == pygame.K_LSHIFT:
             username = self.username_input.strip()
             password = self.password_input.strip()
 
@@ -236,16 +246,16 @@ class DinoGame:
         self.screen.fill((240, 240, 240))
 
         title = self.big_font.render("LOGIN / REGISTER", True, (0, 0, 0))
-        self.screen.blit(title, (220, 35))
+        self.screen.blit(title, (WIDTH/2 - title.get_width()/2, 35))
 
         username_label = self.font.render("Usuario:", True, (0, 0, 0))
         password_label = self.font.render("Contraseña:", True, (0, 0, 0))
 
-        self.screen.blit(username_label, (210, 100))
-        self.screen.blit(password_label, (210, 165))
+        self.screen.blit(username_label, (WIDTH/3-150, 100))
+        self.screen.blit(password_label, (WIDTH/3-150, 165))
 
-        username_box = pygame.Rect(350, 95, 240, 40)
-        password_box = pygame.Rect(350, 160, 240, 40)
+        username_box = pygame.Rect(WIDTH/2 - 120, 95, 240, 40)
+        password_box = pygame.Rect(WIDTH/2 - 120, 160, 240, 40)
 
         color_user = (0, 120, 255) if self.active_field == "username" else (0, 0, 0)
         color_pass = (0, 120, 255) if self.active_field == "password" else (0, 0, 0)
@@ -262,18 +272,15 @@ class DinoGame:
 
         hint1 = self.small_font.render("TAB cambia campo", True, (0, 0, 0))
         hint2 = self.small_font.render("ENTER inicia sesión", True, (0, 0, 0))
-        hint3 = self.small_font.render("F2 registra cuenta nueva", True, (0, 0, 0))
+        hint3 = self.small_font.render("SHIFT registra cuenta nueva", True, (0, 0, 0))
 
-        self.screen.blit(hint1, (320, 230))
-        self.screen.blit(hint2, (300, 255))
-        self.screen.blit(hint3, (287, 280))
-
-        example = self.small_font.render("Ejemplo: samuel / Hola1234", True, (0, 0, 0))
-        self.screen.blit(example, (295, 315))
+        self.screen.blit(hint1, (WIDTH/2 - hint1.get_width()/2, 230))
+        self.screen.blit(hint2, (WIDTH/2 - hint2.get_width()/2, 255))
+        self.screen.blit(hint3, (WIDTH/2 - hint3.get_width()/2, 280))
 
         if self.login_message != "":
             msg = self.small_font.render(self.login_message, True, (200, 0, 0))
-            self.screen.blit(msg, (240, 345))
+            self.screen.blit(msg, (WIDTH/2 - msg.get_width()/2, 345))
 
     def save_after_game(self):
         if self.profile is None:
@@ -309,7 +316,7 @@ class DinoGame:
         if self.frame_count % 300 == 0:
             self.speed += 0.5
 
-        self.dino.update()
+        self.Jugador.update()
 
         for cloud in self.clouds:
             cloud.update()
@@ -325,63 +332,55 @@ class DinoGame:
         self.obstacles = [ob for ob in self.obstacles if ob.x > -80]
 
         if len(self.obstacles) == 0 or self.obstacles[-1].x < WIDTH - random.randint(240, 340):
-            self.obstacles.append(Cactus(self.speed))
+            self.obstacles.append(Obstaculo(self.speed))
 
-        dino_rect = self.dino.rect()
+        jugador_rect = self.Jugador.rect()
 
         for obstacle in self.obstacles:
-            if dino_rect.colliderect(obstacle.rect()):
+            if jugador_rect.colliderect(obstacle.rect()):
                 self.save_after_game()
                 self.state = "game_over"
                 break
 
     def draw_background(self):
         self.screen.fill(WHITE)
-        pygame.draw.line(self.screen, BROWN, (0, GROUND_Y), (WIDTH, GROUND_Y), 3)
-
+        self.screen.blit(self.ground_img, (0, HEIGHT - 300))
+        self.screen.blit(self.ground_img, (800, HEIGHT-50))
         for cloud in self.clouds:
             cloud.draw(self.screen)
 
     def draw_menu(self):
         self.draw_background()
 
-        draw_text(self.screen, "RUNNING GAME", self.big_font, BLACK, 290, 60)
-        draw_text(self.screen, "Versión 0.3", self.font, BLACK, 330, 105)
-        draw_text(self.screen, "Usa flechas y ENTER", self.small_font, BLACK, 360, 140)
+        draw_text(self.screen, "RUNNING GAME", self.big_font, BLACK, WIDTH // 2 - 100, 60)
+        draw_text(self.screen, "Usa flechas y ENTER", self.small_font, BLACK, WIDTH // 2 - 100, 100)
 
         for i, option in enumerate(self.menu_options):
             color = RED if i == self.menu_index else BLACK
-            draw_text(self.screen, option, self.font, color, 360, 190 + i * 40)
+            draw_text(self.screen, option, self.font, color, WIDTH // 2 - 50, 155 + i * 34)
 
         if self.profile is not None:
-            draw_text(self.screen, "Usuario: " + self.profile[0], self.small_font, BLACK, 20, 20)
-            draw_text(self.screen, "Best Score: " + str(self.profile[2]), self.small_font, BLACK, 20, 45)
-            draw_text(self.screen, "Games: " + str(self.profile[3]), self.small_font, BLACK, 20, 70)
+            draw_text(self.screen, "Usuario: " + self.profile[0], self.small_font, BLACK, WIDTH - 200, 20)
+            draw_text(self.screen, "Best Score: " + str(self.profile[2]), self.small_font, BLACK, WIDTH - 200, 45)
+            draw_text(self.screen, "Games: " + str(self.profile[3]), self.small_font, BLACK, WIDTH - 200, 70)
 
-        temp_dino = Dino()
-        temp_dino.x = 180
-        temp_dino.y = 220
-        temp_dino.draw(self.screen)
-
-        cactus = Cactus(0)
-        cactus.x = 680
-        cactus.y = GROUND_Y - cactus.h
-        cactus.draw(self.screen)
+        self.menu_jugador.draw(self.screen)
+        self.menu_obstaculo.draw(self.screen)
 
     def draw_playing(self):
         self.draw_background()
-        self.dino.draw(self.screen)
+        self.Jugador.draw(self.screen)
 
         for obstacle in self.obstacles:
             obstacle.draw(self.screen)
 
-        draw_text(self.screen, "Score: " + str(self.score), self.font, BLACK, 20, 20)
+        draw_text(self.screen, "Score: " + str(self.score), self.font, BLACK, WIDTH/2, 20)
 
         if self.profile is not None:
-            draw_text(self.screen, "Best: " + str(self.profile[2]), self.font, BLACK, 20, 50)
-            draw_text(self.screen, "Jugador: " + self.profile[0], self.small_font, BLACK, 20, 80)
+            draw_text(self.screen, "Best: " + str(self.profile[2]), self.font, BLACK, WIDTH/2, 50)
+            draw_text(self.screen, "Jugador: " + self.profile[0], self.font, BLACK, 40, 50)
 
-        draw_text(self.screen, "SPACE / UP = jump", self.small_font, BLACK, 20, 105)
+        draw_text(self.screen, "SPACE / UP = jump", self.font, BLACK, 20, 20)
 
     def draw_leaderboard(self):
         self.draw_background()
@@ -400,33 +399,33 @@ class DinoGame:
 
     def draw_settings(self):
         self.draw_background()
-        draw_text(self.screen, "SETTINGS", self.big_font, BLACK, 360, 50)
-        draw_text(self.screen, "Volume: " + str(self.settings[0]), self.font, BLACK, 320, 140)
-        draw_text(self.screen, "Difficulty: " + self.settings[1], self.font, BLACK, 320, 180)
+        draw_text(self.screen, "SETTINGS", self.big_font, BLACK, WIDTH // 2 - 50, 50)
+        draw_text(self.screen, "Volume: " + str(self.settings[0]), self.font, BLACK, WIDTH // 2 - 50, 140)
+        draw_text(self.screen, "Difficulty: " + self.settings[1], self.font, BLACK, WIDTH // 2 - 50, 180)
 
         fullscreen_text = "ON" if self.settings[2] == 1 else "OFF"
-        draw_text(self.screen, "Fullscreen: " + fullscreen_text, self.font, BLACK, 320, 220)
+        draw_text(self.screen, "Fullscreen: " + fullscreen_text, self.font, BLACK, WIDTH // 2 - 50, 220)
 
-        draw_text(self.screen, "LEFT/RIGHT cambia volumen", self.small_font, BLACK, 280, 280)
-        draw_text(self.screen, "D cambia dificultad", self.small_font, BLACK, 310, 305)
-        draw_text(self.screen, "F cambia fullscreen", self.small_font, BLACK, 308, 330)
-        draw_text(self.screen, "S guarda y ESC vuelve", self.small_font, BLACK, 320, 355)
+        draw_text(self.screen, "LEFT/RIGHT cambia volumen", self.small_font, BLACK, WIDTH // 2 - 50, 280)
+        draw_text(self.screen, "D cambia dificultad", self.small_font, BLACK, WIDTH // 2 - 50, 305)
+        draw_text(self.screen, "F cambia fullscreen", self.small_font, BLACK, WIDTH // 2 - 50, 330)
+        draw_text(self.screen, "S guarda y ESC vuelve", self.small_font, BLACK, WIDTH // 2 - 50, 355)
 
     def draw_game_over(self):
         self.draw_background()
-        self.dino.draw(self.screen)
+        self.Jugador.draw(self.screen)
 
         for obstacle in self.obstacles:
             obstacle.draw(self.screen)
 
-        draw_text(self.screen, "GAME OVER", self.big_font, RED, 340, 70)
-        draw_text(self.screen, "Score: " + str(self.score), self.font, BLACK, 375, 140)
+        draw_text(self.screen, "GAME OVER", self.big_font, RED, WIDTH // 2 - 50, 70)
+        draw_text(self.screen, "Score: " + str(self.score), self.font, BLACK, WIDTH // 2 - 50, 140)
 
         if self.profile is not None:
-            draw_text(self.screen, "Best Score: " + str(self.profile[2]), self.font, BLACK, 325, 180)
+            draw_text(self.screen, "Best Score: " + str(self.profile[2]), self.font, BLACK, WIDTH // 2 - 50, 180)
 
-        draw_text(self.screen, "ENTER para volver al menu", self.font, BLACK, 275, 240)
-        draw_text(self.screen, "R para jugar otra vez", self.font, BLACK, 330, 280)
+        draw_text(self.screen, "ENTER para volver al menu", self.font, BLACK, WIDTH // 2 - 50, 240)
+        draw_text(self.screen, "R para jugar otra vez", self.font, BLACK, WIDTH // 2 - 50, 280)
 
     def change_difficulty(self):
         current = self.settings[1]
@@ -494,7 +493,7 @@ class DinoGame:
 
                     elif self.state == "playing":
                         if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                            self.dino.jump()
+                            self.Jugador.jump()
                         elif event.key == pygame.K_ESCAPE:
                             self.state = "menu"
 
@@ -533,5 +532,5 @@ class DinoGame:
 
 
 if __name__ == "__main__":
-    game = DinoGame()
+    game = jugadorGame()
     game.run()
