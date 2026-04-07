@@ -167,7 +167,12 @@ class jugadorGame:
         self.menu_options = ["Start Game", "Continue Game", "Leaderboard", "Settings", "Quit"]
 
         self.reset_game_objects()
-
+    def apply_display_mode(self):
+        if self.settings[2] == 1:
+            info = pygame.display.Info()
+            self.screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
+        else:
+            self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
     def reset_game_objects(self):
         self.Jugador = Jugador()
         self.obstacles = [Obstaculo(7)]
@@ -391,8 +396,9 @@ class jugadorGame:
         draw_text(self.screen, "SETTINGS", self.big_font, BLACK, WIDTH // 2 - 50, 50)
         draw_text(self.screen, "Volume: " + str(self.settings[0]), self.font, BLACK, WIDTH // 2 - 50, 140)
         draw_text(self.screen, "Difficulty: " + self.settings[1], self.font, BLACK, WIDTH // 2 - 50, 180)
+        
+        fullscreen_text = "ON" if self.settings[2] == 1 else "OFF"
         draw_text(self.screen, "Fullscreen: OFF", self.font, BLACK, WIDTH // 2 - 50, 220)
-
         draw_text(self.screen, "LEFT/RIGHT cambia volumen", self.small_font, BLACK, WIDTH // 2 - 50, 280)
         draw_text(self.screen, "D cambia dificultad", self.small_font, BLACK, WIDTH // 2 - 50, 305)
         draw_text(self.screen, "S guarda y ESC vuelve", self.small_font, BLACK, WIDTH // 2 - 50, 330)
@@ -451,6 +457,9 @@ class jugadorGame:
             self.settings[0] = min(100, self.settings[0] + 5)
         elif key == pygame.K_d:
             self.change_difficulty()
+        elif key == pygame.K_f:
+            self.settings[2] = 0 if self.settings[2] == 1 else 1
+            self.apply_display_mode()
         elif key == pygame.K_s:
             self.settings_repo.save_settings(self.settings[0], self.settings[1], self.settings[2])
         elif key == pygame.K_ESCAPE:
