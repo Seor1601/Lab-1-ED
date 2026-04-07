@@ -69,7 +69,7 @@ class Jugador:
             self.image = self.jump_frame
 
     def rect(self):
-        return pygame.Rect(int(self.x), int(self.y), self.w, self.h)
+        return pygame.Rect(int(self.x+30), int(self.y+8), self.w-50, self.h-2)
 
     def draw(self, screen):
         screen.blit(self.image, (self.x, self.y + self.draw_offset_y))
@@ -80,7 +80,11 @@ class Obstaculo:
         self.image = pygame.image.load("assets/cactus.png").convert_alpha()
         self.w = 55
         self.h = 95
-        self.image = pygame.transform.scale(self.image, (self.w, self.h))
+        self.draw_w = 400
+        self.draw_h = 130
+        self.hitbox_w = 55
+        self.hitbox_h = 95
+        self.image = pygame.transform.scale(self.image, (self.draw_w, self.draw_h))
         self.x = WIDTH + random.randint(0, 180)
         self.y = GROUND_Y - self.h + 20
         self.speed = speed
@@ -90,8 +94,11 @@ class Obstaculo:
         self.x -= self.speed
 
     def rect(self):
-        hitbox_x = self.x + self.w * 0.28
-        hitbox_y = self.y + self.h * 0.12
+        base_x = self.x + (self.draw_w - self.hitbox_w) / 2
+        base_y = self.y + (self.draw_h - self.hitbox_h)
+        
+        hitbox_x = base_x + self.w * 0.28
+        hitbox_y = base_y + self.h * 0.12
         hitbox_w = self.w * 0.44
         hitbox_h = self.h * 0.78
 
@@ -104,6 +111,7 @@ class Obstaculo:
 
     def draw(self, screen):
         screen.blit(self.image, (self.x, self.y))
+        pygame.draw.rect(screen, (255,0,0), self.rect(), 2)
 
 
 def draw_text(screen, text, font, color, x, y):
@@ -353,7 +361,9 @@ class jugadorGame:
 
         for obstacle in self.obstacles:
             obstacle.draw(self.screen)
-
+            
+        pygame.draw.rect(self.screen, (255, 0, 0), self.Jugador.rect(), 2)
+        
         draw_text(self.screen, "SPACE / UP = jump", self.font, BLACK, 20, 20)
         draw_text(self.screen, "Score: " + str(self.score), self.font, BLACK, WIDTH // 2 - 30, 20)
 
